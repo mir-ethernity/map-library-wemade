@@ -17,48 +17,75 @@ namespace Mir.Ethernity.MapLibrary.Wemade
                 var unknown1 = reader.ReadUInt16();
                 map.Cells = new MapCell[map.Width, map.Height];
 
-                for (var x = 0; x < map.Width; x++)
+                for (ushort x = 0; x < map.Width; x++)
                 {
-                    for (var y = 0; y < map.Height; y++)
+                    for (ushort y = 0; y < map.Height; y++)
                     {
                         map.Cells[x, y] = new MapCell();
 
                     }
                 }
 
-                for (int x = 0; x < map.Width / 2; x++)
+                for (ushort x = 0; x < map.Width / 2; x++)
                 {
-                    for (int y = 0; y < map.Height / 2; y++)
+                    for (ushort y = 0; y < map.Height / 2; y++)
                     {
-                        map.Cells[(x * 2), (y * 2)].BackFile = reader.ReadByte();
-                        map.Cells[(x * 2), (y * 2)].BackImage = reader.ReadUInt16();
+                        var cell = map.Cells[(x * 2), (y * 2)];
+                        var backFile = reader.ReadByte();
+                        cell.Back = new MapCellLayer
+                        {
+                            FileType = (MapFileType)(backFile % 15),
+                            TileType = (MapTileType)Math.Floor(backFile / 15M),
+                            ImageIndex = reader.ReadUInt16()
+                        };
                     }
                 }
 
-                for (int x = 0; x < map.Width; x++)
+                for (ushort x = 0; x < map.Width; x++)
                 {
-                    for (int y = 0; y < map.Height; y++)
+                    for (ushort y = 0; y < map.Height; y++)
                     {
+                        MapCell cell = map.Cells[x, y];
+
                         byte flag = reader.ReadByte();
-                        map.Cells[x, y].MiddleAnimationFrame = reader.ReadByte();
+                        var middleAnimationFrame = reader.ReadByte();
 
-                        byte value = reader.ReadByte();
-                        map.Cells[x, y].FrontAnimationFrame = value == 255 ? (byte)0 : value;
-                        map.Cells[x, y].FrontAnimationFrame &= 0x8F; //Probably a Blend Flag
+                        var frontAnimationFrame = reader.ReadByte();
 
-                        map.Cells[x, y].FrontFile = reader.ReadByte();
-                        map.Cells[x, y].MiddleFile = reader.ReadByte();
-
-                        map.Cells[x, y].MiddleImage = (ushort)(reader.ReadUInt16() + 1);
-                        map.Cells[x, y].FrontImage = (ushort)(reader.ReadUInt16() + 1);
+                        var frontFile = reader.ReadByte();
+                        var middleFile = reader.ReadByte();
+                        var middleImageIndex = reader.ReadUInt16();
+                        var frontImageIndex = reader.ReadUInt16();
 
                         stream.Seek(3, SeekOrigin.Current);
 
-                        map.Cells[x, y].Light = (byte)((reader.ReadByte() & 0x0F) * 2);
+                        cell.Light = (byte)((reader.ReadByte() & 0x0F) * 2);
 
                         stream.Seek(1, SeekOrigin.Current);
 
-                        map.Cells[x, y].Flag = ((flag & 0x01) != 1) || ((flag & 0x02) != 2);
+                        cell.Flag = ((flag & 0x01) != 1) || ((flag & 0x02) != 2);
+
+                        if (frontFile < byte.MaxValue && frontImageIndex < ushort.MaxValue)
+                        {
+                            cell.Front = new MapCellLayer
+                            {
+                                AnimationFrame = frontAnimationFrame < byte.MaxValue ? new byte?((byte)(frontAnimationFrame & 0x8F)) : null,
+                                FileType = (MapFileType)(frontFile % 15),
+                                TileType = (MapTileType)Math.Floor(frontFile / 15M),
+                                ImageIndex = frontImageIndex
+                            };
+                        }
+
+                        if (middleFile < byte.MaxValue && middleImageIndex < ushort.MaxValue)
+                        {
+                            cell.Middle = new MapCellLayer
+                            {
+                                AnimationFrame = middleAnimationFrame < byte.MaxValue ? new byte?(middleAnimationFrame) : null,
+                                FileType = (MapFileType)(middleFile % 15),
+                                TileType = (MapTileType)Math.Floor(middleFile / 15M),
+                                ImageIndex = middleImageIndex
+                            };
+                        }
                     }
                 }
             }

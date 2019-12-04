@@ -5,10 +5,11 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>bvadell</Authors>
     <Company>mir-ethernity</Company>
+    <Version>1.0.3</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mir.Ethernity.MapLibrary" Version="1.0.2" />
+    <PackageReference Include="Mir.Ethernity.MapLibrary" Version="1.0.5" />
   </ItemGroup>
 
 </Project>
